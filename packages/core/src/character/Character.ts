@@ -1,9 +1,12 @@
 import { Color, Vector3 } from "three";
 
-import { CollisionsManager } from "../collisions/collisions-manager";
+import { CameraManager } from "../camera/CameraManager";
+import { CollisionsManager } from "../collisions/CollisionsManager";
+import { KeyInputManager } from "../input/KeyInputManager";
+import { RunTimeManager } from "../runtime/RunTimeManager";
 
-import { CharacterModel } from "./character-model";
-import { LocalController } from "./controller-local";
+import { CharacterModel } from "./CharacterModel";
+import { LocalController } from "./LocalController";
 
 export type CharacterDescription = {
   meshFileUrl: string;
@@ -13,18 +16,9 @@ export type CharacterDescription = {
   modelScale: number;
 };
 
-export type AnimationTypes = "idle" | "walk" | "run";
-
 export class Character {
-  public debug = false;
-  private collisionsManager: CollisionsManager;
-  private characterDescription: CharacterDescription;
-  private modelLoadedCallback: () => void;
-
   public controller: LocalController | null = null;
 
-  public id: number = 0;
-  public isLocal: boolean;
   public name: string | null = null;
   public model: CharacterModel | null = null;
   public color: Color = new Color();
@@ -32,31 +26,36 @@ export class Character {
   public position: Vector3 = new Vector3();
 
   constructor(
-    characterDescription: CharacterDescription,
-    id: number,
-    isLocal: boolean,
-    modelLoadedCallback: () => void,
-    collisionsManager: CollisionsManager,
+    private readonly characterDescription: CharacterDescription,
+    private readonly id: number,
+    private readonly isLocal: boolean,
+    private readonly modelLoadedCallback: () => void,
+    private readonly collisionsManager: CollisionsManager,
+    private readonly keyInputManager: KeyInputManager,
+    private readonly cameraManager: CameraManager,
+    private readonly runTimeManager: RunTimeManager,
   ) {
-    this.characterDescription = characterDescription;
-    this.id = id;
-    this.isLocal = isLocal;
-    this.modelLoadedCallback = modelLoadedCallback;
-    this.collisionsManager = collisionsManager;
     this.load();
   }
 
-  async load(): Promise<void> {
+  private async load(): Promise<void> {
     this.model = new CharacterModel(this.characterDescription);
     await this.model.init();
     this.color = this.model.material.colorsCube216[this.id];
     if (this.isLocal) {
-      this.controller = new LocalController(this.model, this.id, this.collisionsManager);
+      this.controller = new LocalController(
+        this.model,
+        this.id,
+        this.collisionsManager,
+        this.keyInputManager,
+        this.cameraManager,
+        this.runTimeManager,
+      );
     }
     this.modelLoadedCallback();
   }
 
-  update(time: number) {
+  public update(time: number) {
     if (!this.model) return;
     this.position = this.model.mesh!.getWorldPosition(new Vector3());
     if (typeof this.model.material.uniforms.time !== "undefined") {

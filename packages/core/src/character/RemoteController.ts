@@ -1,3 +1,5 @@
+import { CharacterNetworkClientUpdate } from "@mml-playground/character-network";
+import { AnimationState } from "@mml-playground/character-network/src";
 import {
   AnimationAction,
   AnimationClip,
@@ -5,47 +7,36 @@ import {
   LoadingManager,
   Object3D,
   Quaternion,
-  Vector2,
-  Vector3,
 } from "three";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
-import { type AnimationState, type ClientUpdate } from "../network";
-
-import { Character } from "./character";
-
-export type AnimationTypes = "idle" | "walk" | "run";
+import { Character } from "./Character";
 
 export class RemoteController {
-  public id: number = 0;
-  public currentAnimation: string = "idle";
-
-  public character: Character | null = null;
   public characterModel: Object3D | null = null;
+  private loadManager: LoadingManager = new LoadingManager();
 
   private animationMixer: AnimationMixer = new AnimationMixer(new Object3D());
-  private animations: Record<string, AnimationAction> = {};
-  private loadManager: LoadingManager = new LoadingManager();
+  private animations = new Map<AnimationState, AnimationAction>();
+  public currentAnimation: AnimationState = AnimationState.idle;
 
   private fbxLoader: FBXLoader = new FBXLoader(this.loadManager);
   private gltfLoader: GLTFLoader = new GLTFLoader(this.loadManager);
 
-  public networkState: ClientUpdate = {
-    id: 0,
-    location: new Vector3(),
-    rotation: new Vector2(),
-    state: this.currentAnimation as AnimationState,
-  };
-
-  constructor(character: Character, id: number) {
-    this.id = id;
-    this.character = character;
+  constructor(public readonly character: Character, public readonly id: number) {
     this.characterModel = this.character.model!.mesh!;
     this.animationMixer = new AnimationMixer(this.characterModel);
   }
 
-  setAnimationFromFile(animationType: AnimationTypes, fileName: string): void {
+  public update(clientUpdate: CharacterNetworkClientUpdate, time: number, deltaTime: number): void {
+    if (!this.character) return;
+    this.character.update(time);
+    this.updateFromNetwork(clientUpdate);
+    this.animationMixer.update(deltaTime);
+  }
+
+  public setAnimationFromFile(animationType: AnimationState, fileName: string): void {
     const animationFile = `${fileName}`;
     const extension = fileName.split(".").pop();
     if (typeof extension !== "string") {
@@ -57,9 +48,11 @@ export class RemoteController {
         animationFile,
         (anim) => {
           const animation = anim.animations[0] as AnimationClip;
-          this.animations[animationType] = this.animationMixer.clipAction(animation);
-          this.animations[animationType].stop();
-          if (animationType === "idle") this.animations[animationType].play();
+          const animationAction = this.animationMixer.clipAction(animation);
+          this.animations.set(animationType, animationAction);
+          if (animationType === AnimationState.idle) {
+            animationAction.play();
+          }
         },
         undefined,
         (error) => console.error(`Error loading ${animationFile}: ${error}`),
@@ -69,8 +62,11 @@ export class RemoteController {
         animationFile,
         (anim) => {
           const animation = anim.animations[0] as AnimationClip;
-          this.animations[animationType] = this.animationMixer.clipAction(animation);
-          if (animationType === "idle") this.animations[animationType].play();
+          const animationAction = this.animationMixer.clipAction(animation);
+          this.animations.set(animationType, animationAction);
+          if (animationType === AnimationState.idle) {
+            animationAction.play();
+          }
         },
         undefined,
         (error) => console.error(`Error loading ${animationFile}: ${error}`),
@@ -78,11 +74,14 @@ export class RemoteController {
     }
   }
 
-  transitionToAnimation(targetAnimation: string, transitionDuration: number = 0.21): void {
+  private transitionToAnimation(
+    targetAnimation: AnimationState,
+    transitionDuration: number = 0.21,
+  ): void {
     if (this.currentAnimation === targetAnimation) return;
 
-    const currentAction = this.animations[this.currentAnimation];
-    const targetAction = this.animations[targetAnimation];
+    const currentAction = this.animations.get(this.currentAnimation);
+    const targetAction = this.animations.get(targetAnimation);
 
     if (!targetAction) return;
 
@@ -102,23 +101,16 @@ export class RemoteController {
     this.currentAnimation = targetAnimation;
   }
 
-  updateFromNetwork(clientUpdate: ClientUpdate): void {
+  private updateFromNetwork(clientUpdate: CharacterNetworkClientUpdate): void {
     if (!this.characterModel) return;
     const { location, rotation, state } = clientUpdate;
     this.characterModel.position.x = location.x;
     this.characterModel.position.y = location.y;
     this.characterModel.position.z = location.z;
-    const rotationQuaternion = new Quaternion(0, rotation.x, 0, rotation.y);
+    const rotationQuaternion = new Quaternion(0, rotation.quaternionY, 0, rotation.quaternionW);
     this.characterModel.setRotationFromQuaternion(rotationQuaternion);
     if (state !== this.currentAnimation) {
       this.transitionToAnimation(state);
     }
-  }
-
-  update(clientUpdate: ClientUpdate, time: number, deltaTime: number): void {
-    if (!this.character) return;
-    this.character.update(time);
-    this.updateFromNetwork(clientUpdate);
-    this.animationMixer.update(deltaTime);
   }
 }

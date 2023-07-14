@@ -22,19 +22,19 @@ export class Composer {
   private height: number = window.innerHeight;
   public resolution: Vector2 = new Vector2(this.width, this.height);
 
-  private scene: Scene;
-  private camera: PerspectiveCamera;
-  public renderer: WebGLRenderer;
+  private readonly scene: Scene;
+  private readonly camera: PerspectiveCamera;
+  public readonly renderer: WebGLRenderer;
 
-  public composer: EffectComposer;
-  private renderPass: RenderPass;
-  private fxaaEffect: FXAAEffect;
-  private fxaaPass: EffectPass;
-  private bloomEffect: BloomEffect;
-  private bloomPass: EffectPass;
+  private readonly composer: EffectComposer;
+  private readonly renderPass: RenderPass;
+  private readonly fxaaEffect: FXAAEffect;
+  private readonly fxaaPass: EffectPass;
+  private readonly bloomEffect: BloomEffect;
+  private readonly bloomPass: EffectPass;
 
-  private gaussGrainEffect = GaussGrainEffect;
-  private gaussGrainPass: ShaderPass;
+  private readonly gaussGrainEffect = GaussGrainEffect;
+  private readonly gaussGrainPass: ShaderPass;
 
   constructor(scene: Scene, camera: PerspectiveCamera) {
     this.scene = scene;
@@ -65,11 +65,12 @@ export class Composer {
     this.composer.addPass(this.bloomPass);
     this.composer.addPass(this.gaussGrainPass);
 
-    window.addEventListener("resize", this.updateProjection.bind(this));
-    this.render = this.render.bind(this);
+    window.addEventListener("resize", () => {
+      this.updateProjection();
+    });
   }
 
-  updateProjection(): void {
+  private updateProjection(): void {
     const currentWidth = window.innerWidth;
     const currentHeight = window.innerHeight;
     const currentAspect = currentWidth / currentHeight;
@@ -86,7 +87,7 @@ export class Composer {
     this.renderer.setSize(this.width, this.height);
   }
 
-  render(time: number): void {
+  public render(time: number): void {
     this.composer.render();
     this.gaussGrainEffect.uniforms.resolution.value = this.resolution;
     this.gaussGrainEffect.uniforms.time.value = time;

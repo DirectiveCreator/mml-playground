@@ -1,6 +1,8 @@
-import { ClientUpdate } from "./network";
+import { CharacterNetworkClientUpdate } from "./CharacterNetworkCodec";
 
-export function networkDebugOverlay(clientUpdates: Map<number, ClientUpdate>): void {
+export function networkDebugOverlay(
+  clientUpdates: Map<number, CharacterNetworkClientUpdate>,
+): void {
   let overlay = document.getElementById("network");
 
   const formatNumber = (num: number): string => {
@@ -41,9 +43,9 @@ export function networkDebugOverlay(clientUpdates: Map<number, ClientUpdate>): v
         <td class="location">x: ${formatNumber(location.x)}, y: ${formatNumber(
       location.y,
     )}, z: ${formatNumber(location.z)}</td>
-        <td class="rotation">x: 0, y: ${formatNumber(rotation.x)}, z: 0, w: ${formatNumber(
-      rotation.y,
-    )}</td>
+        <td class="rotation">x: 0, y: ${formatNumber(
+          rotation.quaternionY,
+        )}, z: 0, w: ${formatNumber(rotation.quaternionW)}</td>
         <td class="state">${state}</td>
       </tr>`;
   });
