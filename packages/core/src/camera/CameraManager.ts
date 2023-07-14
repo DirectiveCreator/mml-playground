@@ -27,6 +27,15 @@ export class CameraManager {
     document.addEventListener("mouseup", this.onMouseUp.bind(this));
     document.addEventListener("mousemove", this.onMouseMove.bind(this));
     document.addEventListener("wheel", this.onMouseWheel.bind(this));
+    window.addEventListener("resize", this.onResize.bind(this));
+  }
+
+  private onResize(): void {
+    console.log("onResize");
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    this.camera.aspect = width / height;
+    this.camera.updateProjectionMatrix();
   }
 
   private onMouseDown(_event: MouseEvent): void {

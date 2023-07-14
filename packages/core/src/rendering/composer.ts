@@ -68,6 +68,7 @@ export class Composer {
     window.addEventListener("resize", () => {
       this.updateProjection();
     });
+    this.updateProjection();
   }
 
   private updateProjection(): void {
@@ -84,6 +85,7 @@ export class Composer {
     if (this.composer) this.composer.setSize(this.width, this.height);
     if (this.fxaaPass) this.fxaaPass.setSize(this.width, this.height);
     if (this.renderPass) this.renderPass.setSize(this.width, this.height);
+    console.log("updateProjection", this.width, this.height);
     this.renderer.setSize(this.width, this.height);
   }
 
