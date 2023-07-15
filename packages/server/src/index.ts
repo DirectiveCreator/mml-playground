@@ -1,13 +1,13 @@
 import path from "path";
 
 import { CharacterNetworkServer } from "@mml-playground/character-network";
-import express, { Request } from "express";
+import express from "express";
 import enableWs from "express-ws";
 import WebSocket from "ws";
 
-import { addWebAppHandler } from "./router/client-app-handler";
 import { MMLDocumentsServer } from "./router/MMLDocumentsServer";
 import { PlaygroundMMLDocumentServer } from "./router/PlaygroundMMLDocumentServer";
+import { addWebAppRoutes } from "./router/web-app-routes";
 
 const PORT = process.env.PORT || 8080;
 const DOCUMENT_SOCKET_PATH = "/document";
@@ -43,13 +43,13 @@ app.ws(`${EXAMPLE_DOCUMENTS_SOCKET_PATH}/:filename`, (ws: WebSocket, req: expres
   mmlDocumentsServer.handle(filename, ws);
 });
 
-addWebAppHandler(app);
-
-// Create character network
 const characterNetwork = new CharacterNetworkServer();
 app.ws(CHARACTER_NETWORK_SOCKET_PATH, (ws) => {
   characterNetwork.connectClient(ws);
 });
+
+// Serve the app (including development mode)
+addWebAppRoutes(app);
 
 // Start listening
 console.log("Listening on port", PORT);

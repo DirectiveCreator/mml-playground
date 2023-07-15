@@ -29,7 +29,6 @@ export class PlaygroundMMLDocumentServer {
 
   public setHost(examplesHostUrl: string) {
     if (this.examplesHostUrl !== examplesHostUrl) {
-      console.log("setHost", examplesHostUrl);
       this.examplesHostUrl = examplesHostUrl;
       this.reload();
     }

@@ -1,36 +1,34 @@
-import "./style.css";
-
 import { CharacterNetworkClient } from "@mml-playground/character-network";
 import {
   CameraManager,
   CharacterDescription,
   CharacterManager,
+  CollisionsManager,
   Composer,
   CoreMMLScene,
   KeyInputManager,
   RunTimeManager,
-  CollisionsManager,
 } from "@mml-playground/core";
 import { AudioListener, Fog, Group, PerspectiveCamera, Scene } from "three";
 
-import { Environment } from "./environment";
-import { Lights } from "./lights";
-import { Room } from "./room";
+import { Environment } from "./Environment";
+import { Lights } from "./Lights";
+import { Room } from "./Room";
 
 export class App {
   private readonly group: Group;
   private readonly scene: Scene;
   private readonly audioListener: AudioListener;
+  private readonly composer: Composer;
 
   private readonly camera: PerspectiveCamera;
-  private readonly runTime: RunTimeManager;
-  private readonly inputManager: KeyInputManager;
+  private readonly runTimeManager: RunTimeManager;
+  private readonly keyInputManager: KeyInputManager;
   private readonly characterManager: CharacterManager;
   private readonly cameraManager: CameraManager;
-  private readonly composer: Composer;
+  private readonly collisionsManager: CollisionsManager;
   private readonly networkClient: CharacterNetworkClient;
 
-  private readonly collisionsManager: CollisionsManager;
   private readonly modelsPath: string = "/assets/models";
   private readonly characterDescription: CharacterDescription | null = null;
 
@@ -39,9 +37,10 @@ export class App {
     this.scene.fog = new Fog(0xdcdcdc, 0.1, 100);
     this.audioListener = new AudioListener();
     this.group = new Group();
+    this.scene.add(this.group);
 
-    this.runTime = new RunTimeManager();
-    this.inputManager = new KeyInputManager();
+    this.runTimeManager = new RunTimeManager();
+    this.keyInputManager = new KeyInputManager();
     this.cameraManager = new CameraManager();
     this.camera = this.cameraManager.camera;
     this.composer = new Composer(this.scene, this.camera);
@@ -50,8 +49,8 @@ export class App {
     this.characterManager = new CharacterManager(
       this.collisionsManager,
       this.cameraManager,
-      this.runTime,
-      this.inputManager,
+      this.runTimeManager,
+      this.keyInputManager,
       this.networkClient,
     );
     this.group.add(this.characterManager.group);
@@ -71,15 +70,12 @@ export class App {
       `${protocol}//${host}/document`,
     );
     this.group.add(mmlScene.group);
+    this.group.add(new Environment(this.scene, this.composer.renderer));
+    this.group.add(new Lights());
 
-    const environment = new Environment(this.scene, this.composer.renderer);
-    this.group.add(environment);
     const room = new Room();
     this.collisionsManager.addMeshesGroup(room);
     this.group.add(room);
-    this.group.add(new Lights());
-
-    this.scene.add(this.group);
 
     this.characterDescription = {
       meshFileUrl: `${this.modelsPath}/unreal_idle.glb`,
@@ -117,10 +113,10 @@ export class App {
   }
 
   public update(): void {
-    this.runTime.update();
+    this.runTimeManager.update();
     this.characterManager.update();
     this.cameraManager.update();
-    this.composer.render(this.runTime.time);
+    this.composer.render(this.runTimeManager.time);
     requestAnimationFrame(() => {
       this.update();
     });

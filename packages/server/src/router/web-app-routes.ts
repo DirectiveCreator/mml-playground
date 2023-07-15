@@ -8,7 +8,7 @@ const FORK_PAGE_CONTENT = `
   Please click the 'Fork' button to create your sandbox.
 `;
 
-export function addWebAppHandler(app: express.Application) {
+export function addWebAppRoutes(app: express.Application) {
   // Serve frontend statically in production
   if (process.env.NODE_ENV === "production") {
     const demoModulePath = require
