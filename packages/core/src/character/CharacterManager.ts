@@ -77,8 +77,13 @@ export class CharacterManager {
               this.cameraManager.camera,
             );
           } else {
-            const spawnPosition = getSpawnPositionInsideCircle(7, 30, id);
+            const spawnPosition = getSpawnPositionInsideCircle(3, 30, id);
             character.model!.mesh!.position.set(spawnPosition.x, spawnPosition.y, spawnPosition.z);
+            this.cameraManager.camera.position.set(
+              spawnPosition.x,
+              spawnPosition.y + 1.5,
+              spawnPosition.z + 3,
+            );
           }
           character.model!.hideMaterialByMeshName("SK_UE5Mannequin_1");
           group.add(character.model!.mesh!);

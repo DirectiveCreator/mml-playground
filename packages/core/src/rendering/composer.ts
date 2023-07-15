@@ -72,20 +72,12 @@ export class Composer {
   }
 
   private updateProjection(): void {
-    const currentWidth = window.innerWidth;
-    const currentHeight = window.innerHeight;
-    const currentAspect = currentWidth / currentHeight;
-    const tanFOV = Math.tan(((Math.PI / 180.0) * this.camera.fov) / 2.0);
-    this.camera.aspect = currentAspect;
-    this.camera.fov = (360 / Math.PI) * Math.atan(tanFOV * (currentHeight / this.height));
-    this.camera.updateProjectionMatrix();
-    this.width = currentWidth;
-    this.height = currentHeight;
+    this.width = window.innerWidth;
+    this.height = innerHeight;
     this.resolution = new Vector2(this.width, this.height);
     if (this.composer) this.composer.setSize(this.width, this.height);
     if (this.fxaaPass) this.fxaaPass.setSize(this.width, this.height);
     if (this.renderPass) this.renderPass.setSize(this.width, this.height);
-    console.log("updateProjection", this.width, this.height);
     this.renderer.setSize(this.width, this.height);
   }
 

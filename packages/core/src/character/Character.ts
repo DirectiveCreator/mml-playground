@@ -57,7 +57,7 @@ export class Character {
 
   public update(time: number) {
     if (!this.model) return;
-    this.position = this.model.mesh!.getWorldPosition(new Vector3());
+    this.model.mesh!.getWorldPosition(this.position);
     if (typeof this.model.material.uniforms.time !== "undefined") {
       this.model.material.uniforms.time.value = time;
       this.model.material.uniforms.diffuseRandomColor.value = this.color;

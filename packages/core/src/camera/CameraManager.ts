@@ -4,17 +4,16 @@ import { ease } from "../helpers/math-helpers";
 
 export class CameraManager {
   public readonly camera: PerspectiveCamera;
+  private dragging: boolean = false;
   private target: Vector3 = new Vector3(0, 1.55, 0);
   private targetDistance: number;
   private maxTargetDistance: number = 20;
   private distance: number;
-  private targetPhi: number | null = null;
-  private phi: number | null = null;
-  private targetTheta: number | null = null;
-  private theta: number | null = null;
-
-  private dragging: boolean = false;
-  private firstMouseInteraction: boolean = false;
+  private targetPhi: number | null = Math.PI / 2;
+  private phi: number | null = Math.PI / 2;
+  private targetTheta: number | null = -Math.PI / 2;
+  private theta: number | null = -Math.PI / 2;
+  private hadTarget: boolean = false;
 
   constructor() {
     this.camera = new PerspectiveCamera(80, window.innerWidth / window.innerHeight, 0.1, 2000);
@@ -31,7 +30,6 @@ export class CameraManager {
   }
 
   private onResize(): void {
-    console.log("onResize");
     const width = window.innerWidth;
     const height = window.innerHeight;
     this.camera.aspect = width / height;
@@ -40,12 +38,6 @@ export class CameraManager {
 
   private onMouseDown(_event: MouseEvent): void {
     this.dragging = true;
-    if (this.phi === null || this.theta === null) {
-      this.phi = this.targetPhi = Math.PI / 2;
-      this.theta = this.targetTheta = Math.PI / 2;
-      this.reverseUpdateFromPositions();
-      this.firstMouseInteraction = true;
-    }
   }
 
   private onMouseUp(_event: MouseEvent): void {
@@ -74,6 +66,10 @@ export class CameraManager {
 
   public setTarget(target: THREE.Vector3): void {
     this.target.copy(target);
+    if (!this.hadTarget) {
+      this.hadTarget = true;
+      this.reverseUpdateFromPositions();
+    }
   }
 
   private reverseUpdateFromPositions(): void {
@@ -82,8 +78,6 @@ export class CameraManager {
     const dy = this.camera.position.y - this.target.y;
     const dz = this.camera.position.z - this.target.z;
     this.targetDistance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-    this.targetTheta = Math.atan2(dx, dz);
-    this.targetPhi = Math.acos(dy / this.distance);
     this.targetTheta = (this.theta + 2 * Math.PI) % (2 * Math.PI);
     this.targetPhi = Math.max(0, Math.min(Math.PI, this.phi));
     this.phi = this.targetPhi;
@@ -95,9 +89,6 @@ export class CameraManager {
     if (this.target === null) {
       return;
     }
-    if (!this.firstMouseInteraction) {
-      return;
-    }
     if (
       this.phi !== null &&
       this.targetPhi !== null &&
@@ -105,6 +96,7 @@ export class CameraManager {
       this.targetTheta !== null
     ) {
       this.distance += ease(this.targetDistance, this.distance, 0.02);
+      this.distance = Math.min(this.distance, this.maxTargetDistance);
       this.phi += ease(this.targetPhi, this.phi, 0.07);
       this.theta += ease(this.targetTheta, this.theta, 0.07);
 
